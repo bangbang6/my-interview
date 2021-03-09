@@ -27,7 +27,14 @@
   <div>
     <span>Aa</span>
   </div>
+  <input type="text" id='text'>
 </body>
 <script src="./bibao.js"></script>
-<script src="./hongrenwu.js"></script>
+<script src="./throttle.js"></script>
+<script>
+  let text = document.querySelector('#text')
+  text.addEventListener('keyup',throttle(function(){
+    console.log(text.value);
+  },200))
+</script>
 </html>
