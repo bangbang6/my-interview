@@ -31,11 +31,9 @@ p1.style.width p1.className
 
 property是对dom元素的js变量进行修改，不会对标签产生什么影响
 
-attr是直接对dom元素自身标签进行修改，会在标签属性里面展示
+attr是直接对dom元素自身html标签进行修改，会在标签属性里面展示
 
-
-
-
+![](https://i.loli.net/2021/03/09/D1NQSTyXF56VGMp.png)
 
 #### dom结构操作
 
