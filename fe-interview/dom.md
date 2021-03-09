@@ -61,4 +61,4 @@ childnodes 包含text节点和p节点 因为两个p直接会有空格
 
 ![image-20210309171459517](https://i.loli.net/2021/03/09/h7vBadqGo463mUT.png)
 
-一次性将frag插入 而不是一个一个插入li
+**一次性将frag插入 而不是一个一个插入li** createDocumentFragment 创建临时文档片段   
