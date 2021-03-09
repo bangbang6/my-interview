@@ -41,3 +41,6 @@ attr是直接对dom元素自身标签进行修改，会在标签属性里面展�
 
 ![image-20210309170439969](https://i.loli.net/2021/03/09/j815cMLDrqJAgxY.png)
 
+appendchild 当时一个已经存在的节点时候 节点会移动
+
+childnodes 包含text节点和p节点 因为两个p直接会有空格
