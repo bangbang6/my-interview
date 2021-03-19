@@ -18,7 +18,7 @@ let res1 = fn() //返回一个promise async 会自动将非promise的封装成pr
 async function (){
 	let data = await 400
 	log(data)
-} //如果await后面不是promis也会自动封装成promise
+} //如果await后面是promis 会自动转成value
 ```
 
   (2)异步的本质

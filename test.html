@@ -36,5 +36,9 @@
   text.addEventListener('keyup',throttle(function(){
     console.log(text.value);
   },200))
+  console.log(typeof null);
+  window.onhashchange((e)=>{
+    console.log('1');
+  })
 </script>
 </html>
