@@ -91,7 +91,7 @@ List.propTypes = {
 
 ![image-20210319094346421](https://i.loli.net/2021/03/19/TBifw7EjQzPU2yd.png)
 
-也分为挂载,跟新时，卸载时,就五六个而已
+也分为挂载,跟新时，卸载时,就七个而已
 
 挂载时候：constructor->render->componentDIdMount   没有beforeMount之类的
 
@@ -205,8 +205,61 @@ export const shallowEqual = (obj, newObj) => {
 
 ## 13.组件公共逻辑抽离
 
-1.采用高阶组件就是个函数,接受一个组件,返回一个组件，然后这个组件的render是返回接受的组件，公共逻辑就在render其他地方
+1.采用**高阶组件**就是个函数,接受一个组件,返回一个组件，然后这个组件的render是返回接受的组件，公共逻辑就在render其他地方
 
 ![image-20210319112832884](https://i.loli.net/2021/03/19/wJ8hc3jQXHDCep5.png)
 
-2.render props
+**2.render props**
+
+APP函数返回一个组件 该组件就是公共逻辑组件(factory)，把render函数当做props传入，然后factory组件返回render函数返回的组件
+
+factory有a,b属性传到render函数当作props
+
+![image-20210319115151342](https://i.loli.net/2021/03/19/1YqHXhZ3k6CxLfi.png)
+
+## 14.jsx本质是什么
+
+就是个createElement函数 返回一个vnode,经过patch后形成一个页面
+
+## 15.纯函数
+
+一个函数的返回结果只依赖于它的参数，并且在执行过程里面没有副作用，我们就把这个函数叫做纯函数。
+
+https://blog.csdn.net/c_kite/article/details/79138814
+
+#### 1.什么叫只依赖他的参数？
+
+![image-20210319162158378](https://i.loli.net/2021/03/19/dHupmbiVQJDlwkU.png)
+
+这个函数还依赖a
+
+#### 什么叫没有副作用？就是对外部变量/环境不产生影响
+
+```js
+let obj = {x:1}
+function a(obj){
+	obj.x = 2
+}
+a()
+log(obj)
+```
+
+obj发生啦改变不是纯函数
+
+同时setTimeout.domapi都对外界产生啦可观察的变化，甚至是console.log我们都能在控制台看到输出
+
+
+
+没有副作用，不会改变其他值，返回一个新值，重点：不可变值
+
+## 16.性能优化
+
+1.scu
+
+2.key
+
+3.自定义dom事件和监听器即使销毁
+
+4.异步组件和路由组件懒加载
+
+5.减少bind(this)的次数

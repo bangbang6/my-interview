@@ -1,0 +1,143 @@
+## 1.基本配置
+
+#### 1.拆分配置和merge
+
+webpack-merge库
+
+![image-20210329152758129](https://i.loli.net/2021/03/29/FGNELvnuCWbt8Te.png)
+
+
+
+#### 2.处理图片 分环境配置
+
+dev: 直接file-loader
+
+![image-20210329153538196](https://i.loli.net/2021/03/29/jA8QCuX9lO5xK6d.png)
+
+pro:url-loader 可以转成base64(小于limit） 为什么呢？以base64格式输出可以减少一次请求
+
+或者线上cdn
+
+![image-20210329153558870](https://i.loli.net/2021/03/29/dqzwFogTJuhWmGl.png)
+
+
+
+
+
+## 
+
+#### 3.dev和pro区别
+
+base里面有的是
+
+```
+entry
+babel-loader
+css-loader
+```
+
+dev有的是
+
+```js
+devServer 
+图片用file-loader
+不用outputPath 因为我们dev直接用webpack-dev-server启动，配置devserver这个项就能直接看到extry.html的结果
+ devServer: {
+        port: 8080,
+        progress: true,  // 显示打包的进度条
+        contentBase: distPath,  // 根目录
+        open: true,  // 自动打开浏览器
+        compress: true,  // 启动 gzip 压缩
+
+        // 设置代理
+        proxy: {
+            // 将本地 /api/xxx 代理到 localhost:3000/api/xxx
+            '/api': 'http://localhost:3000',
+
+            // 将本地 /api2/xxx 代理到 localhost:3000/xxx
+            '/api2': {
+                target: 'http://localhost:3000',
+                pathRewrite: {
+                    '/api2': ''
+                }
+            }
+        }
+    }
+```
+
+```json
+"dev": "webpack-dev-server --config build-optimization/webpack.dev.js",
+    "build": "webpack --config build-optimization/webpack.prod.js"
+```
+
+prod:
+
+```js
+outputPath
+图片用url-loader可以对小于Limit的用base64
+```
+
+
+
+#### 4.webpack设置代理
+
+```js
+module.exports= {
+ devServer: {
+        port: 8080,
+        progress: true,  // 显示打包的进度条
+        contentBase: distPath,  // 根目录
+        open: true,  // 自动打开浏览器
+        compress: true,  // 启动 gzip 压缩
+
+        // 设置代理
+        proxy: {
+            // 将本地 /api/xxx 代理到 localhost:3000/api/xxx
+            '/api': 'http://localhost:3000',
+
+            // 将本地 /api2/xxx 代理到 localhost:3000/xxx
+            '/api2': {
+                target: 'http://localhost:3000',
+                pathRewrite: {
+                    '/api2': ''
+                }
+            }
+        }
+    }
+}
+```
+
+#### 5.babel的presets
+
+有个presets": ["@babel/preset-env"],是有常用的es6,7的语法解析
+
+#### 6.postcss-loader
+
+![image-20210329153103415](https://i.loli.net/2021/03/29/k9dimPSCJtoZB3H.png)
+
+这个postcss也有个单独的配置文件 postcss.config.js 
+
+autoprefixer插件主要是让css加前缀，然后兼容所有的浏览器
+
+```js
+module.exports = {
+    plugins: [require('autoprefixer')]
+}
+```
+
+#### 7.less-loader
+
+![image-20210329153433326](https://i.loli.net/2021/03/29/TucljonCOLJ6kvR.png)
+
+#### 8.contentHash
+
+```js
+ output: {
+        filename: 'bundle.[contentHash:8].js',  // 打包代码时，加上 hash 戳
+        path: distPath,
+        // publicPath: 'http://cdn.abc.com'  // 修改所有静态文件 url 的前缀（如 cdn 域名），这里暂时用不到
+    },
+```
+
+contentHash是当内容没变时候 hash是不会变得，直接命中缓存。
+

@@ -85,3 +85,10 @@ setTimeout(() => {
 
 相当于传入对象是异步，传入函数是同步
 
+## 4.题目
+
+![image-20210319161428115](https://i.loli.net/2021/03/19/w5DMTl2PFvAbXry.png)
+
+setstate异步 所以前两个都是0
+
+settimeout也是异步，所以之前的setstate都会生效，但是由于state合并，在settimeout之前state已经合并为1，这时候执行settimeout里面的+1是同步所以是2

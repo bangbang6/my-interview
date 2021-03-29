@@ -2,6 +2,14 @@
 
 ![image-20210308100617562](C:\Users\legion\AppData\Roaming\Typora\typora-user-images\image-20210308100617562.png)
 
+区别：
+
+​	1.react用jsx就是js,vue使用html是一个自定义的vue文件
+
+​	2.react函数式编程setstate 传入一个state返回一个视图，vue声明式编程 this.data=xxx，直接改变data
+
+​	3.react更多自力更生，vue都给你 比如scu，而且react不会给watch之类的给你，你自己用js去实现
+
 #### 2.v-if 和v-for哪个优先级更高
 
 ```vue
@@ -166,13 +174,7 @@ vuex是vue专门的状态管理模式    集中(state),可预测的(mutation)
 
 commit直接派发Mutation dispatch派发action异步在派发mutaion  外部传入mutation 和actions两个对象就是 改变state的说明书
 
-#### 11.vue-router保护指定路由安全
-
-路由守卫，beforeEach 等勾子判断
-
-![image-20210308165608042](C:\Users\legion\AppData\Roaming\Typora\typora-user-images\image-20210308165608042.png)
-
-##### //待补充看
+##### 
 
 #### 12.你知道next-tick吗
 
