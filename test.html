@@ -15,6 +15,26 @@
       height:200px;
       line-height: 100px;
     }
+    .container{
+    width:100%;
+    display:flex
+  }
+    .left{
+    width:200px;
+   
+  }
+    .right{
+    width:200px;
+     /*  background-color: red; */
+  }
+    .bottom{
+    flex:1;
+    
+  }
+  .inner{
+    width: 800px;
+    background-color: blue;
+  }
   </style>
   <title>Document</title>
 </head>
@@ -28,6 +48,13 @@
     <span>Aa</span>
   </div>
   <input type="text" id='text'>
+  <div class="container">
+    <div class="left"></div>
+    <div class="bottom">
+      <div class="inner"></div>
+    </div>
+    <div class="right"></div>
+  </div>
 </body>
 <script src="./bibao.js"></script>
 <script src="./throttle.js"></script>
@@ -40,5 +67,7 @@
   window.onhashchange((e)=>{
     console.log('1');
   })
+
+  
 </script>
 </html>

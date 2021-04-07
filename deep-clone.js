@@ -1,13 +1,15 @@
 function deepClone(obj){
   //typeof只能判断基本类型+object+function 其他的对象都是在object里
-  if(typeof obj !== 'object' || typeof obj === 'null'){
+  if(typeof obj !== 'object'  ||obj === null){
     return obj
   }
+  
   let result
   
   if(obj instanceof Array ){
     result = []
   }else{
+    
     result = {}
   }
  
