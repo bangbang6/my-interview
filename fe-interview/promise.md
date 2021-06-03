@@ -42,8 +42,19 @@ throw err) //返回reject的promise
 
 打印1，2，3
 
-2. new promise(function(){
+2. ```js
+new promise(function(){
+   
+})
+   //里面的函数会同步执行
+   
+   //.then 里面的才是promise的异步
+   ```
+   
+   
 
-   })里面的函数会同步执行
+3.所有异步的Bug都可以用new promise解决 
 
-   .then 里面的才是promise的异步
+比如这个数据可能同步获取也可能异步获取，我们直接外面封装一层promise 然后里面等数据获取到再去resolve，那么就解决异步问题啦
+
+![image-20210602202518176](https://i.loli.net/2021/06/02/TwXJruhgcOyYElF.png)
