@@ -375,3 +375,257 @@ plugin 是扩展插件 htmlwebpackplugin
 ## 4.为什么proxy不能被polyfill
 
 因为proxy的功能不能用object.definePropety模拟，class是可以被function模拟的，promise是可以被callback模拟
+
+## 5.手写loader https://juejin.cn/post/6888936770692448270
+
+遵循`Webpack`制定的设计规则和结构，输入与输出均为字符串，各个`Loader`完全独立，即插即用。
+
+loader默认导出一个函数，接受匹配到的文件资源字符串和SourceMap，我们可以修改文件内容字符串后再返回给下一个loader进行处理，因此最简单的一个loader如下：
+
+```js
+module.exports = function(source, map){ //source就是匹配到的文件的内容
+    return source
+}
+```
+
+导出的`loader函数`不能使用箭头函数，因为很多loader内部的属性和方法都需要通过`this`进行调用
+
+编写一个style-loader：其实就是把css文件内的代码添加到style标签内
+
+```js
+function loader(source, map) {
+  let style = `
+    let style = document.createElement('style');
+    style.innerHTML = ${JSON.stringify(source)};
+    document.head.appendChild(style)
+  `;
+  return style;
+}
+module.exports = loader;
+
+```
+
+**异步loader**
+
+`style-loader`都是同步操作,我们在处理source时，有时候会进行异步操作，一种方法是通过async/await，阻塞操作执行；另一种方法可以通过loader本身提供的回调函数`callback`。callback就是可以等异步操作结束后再return 第二个参数
+
+```js
+//loader/less-loader
+const less = require("less");
+function loader(source) {
+  const callback = this.async();
+  less.render(source, function (err, res) {
+    let { css } = res;
+    callback(null, css); //把css return 出去 有callback 这个Loader就会等这个异步结束调用callback 而不是直接获取return的Undified
+  });
+}
+module.exports = loader;
+
+```
+
+**加载本地loader**
+
+只需要写上路径   loader: './loader/style-loader.js',
+
+**处理参数**
+
+```js
+{
+  test: /\.(jpg|png|gif|bmp|jpeg)$/,
+  use: 'url-loader?limt=1024&name=[hash:8].[ext]'
+}
+```
+
+外面通过getOptions获取参数对象 这个函数在loader-utils包
+
+获取到参数后，我们还需要对获取到的`options`参数进行完整性校验，避免有些参数漏传，如果一个个判断校验比较繁琐，这就用到另一个官方包`schema-utils`：
+
+```js
+const { getOptions } = require("loader-utils");
+const { validate } = require("schema-utils");
+const schema = require("./schema.json");
+module.exports = function (source, map) {
+  const options = getOptions(this);
+  const configuration = { name: "Loader Name"};
+  validate(schema, options, configuration);
+  //省略其他代码
+}
+
+```
+
+`validate`函数并没有返回值，打印返回值发现是`undefined`，因为如果参数不通过的话直接会抛出`ValidationError`异常，直接进程中断；这里引入了一个`schema.json`，就是我们对`options``中参数进行校验的一个json格式的对应表：
+
+```js
+{
+    "type": "object",
+    "properties": {
+        "source": {
+            "type": "boolean"
+        },
+        "name": {
+            "type": "string"
+        },
+    },
+    "additionalProperties": false
+}
+
+```
+
+**缓存加速**
+
+　　在有些情况下，loader处理需要大量的计算非常耗性能（比如babel-loader），如果每次构建都重新执行相同的转换操作每次构建都会非常慢。
+
+　　因此webpack默认会将loader的处理结果标记为可缓存，也就是说在需要被处理的文件或者其依赖的文件没有发生变化时，它的输出结果必然是相同的；如果不想让webpack缓存该loader，可以禁用缓存：
+
+```js
+module.exports = function(source) {
+  // 强制不缓存
+  this.cacheable(false);
+  return source;
+};
+```
+
+**loader依赖**
+
+在loader中，我们有时候也会使用到外部的资源文件(比如a.txt)，我们需要在loader对这些资源文件进行声明，这些声明信息主要用于使得缓存loader失效，以及在观察模式(watch mode)下重新编译
+
+```js
+//loader/banner-loader
+const fs = require("fs");
+const path = require("path");
+const { getOptions } = require("loader-utils");
+
+module.exports = function (source) {
+  const options = getOptions(this);
+  if (options.filename) {
+    let txt = "";
+    if (options.filename == "banner1") {
+      this.addDependency(path.resolve(__dirname, "./banner1.txt")); //声明依赖 便于后面的loader缓存知道有这个依赖而依赖不变可以缓存
+      txt = fs.readFileSync(path.resolve(__dirname, "./banner1.txt"));//加载依赖
+    } else if (options.filename == "banner2") {
+      this.addDependency(path.resolve(__dirname, "./banner1.txt"));
+      txt = fs.readFileSync(path.resolve(__dirname, "./banner1.txt"));
+    }
+    return source + txt;
+  } else if (options.text) {
+    return source + `/* ${options.text} */`;
+  } else {
+    return source;
+  }
+};
+
+```
+
+## 6.手写Plugin
+
+在 Webpack 运行的**生命周期**中会**广播出许多事件**，Plugin 可以监听这些事件，在合适的时机**通过Webpack提供的API**改变输出结果
+
+plugin本质就是类
+
+**传参**
+
+```js
+//plugins/MyPlugin.js
+class MyPlugin {
+  constructor(options) {
+    console.log("Plugin被创建了");
+    console.log(options);
+    this.options = options;
+  }
+  apply (compiler) {}
+}
+//webpack.config.js
+module.exports = {
+  plugins: [
+    new MyPlugin({ title: 'MyPlugin' })
+  ],
+}
+
+
+```
+
+`apply`函数，它会在webpack运行时被调用，并且注入`compiler`对象；其工作流程如下：
+
+**webpack启动，执行new myPlugin(options)，初始化插件并获取实例**
+
+**初始化complier对象，调用myPlugin.apply(complier)给插件传入complier对象**
+
+**插件实例获取complier，通过complier监听webpack广播的事件，通过complier对象操作webpack**
+
+
+compiler不仅有同步的钩子，通过tap函数来注册，还有异步的钩子，通过`tapAsync`和`tapPromise`来注册：
+
+```js
+class MyPlugin {
+  apply(compiler) {
+    //不推荐使用，plugin函数被废弃了
+    // compiler.plugin("compile", (compilation) => {
+    //   console.log("compile");
+    // });
+    
+    compiler.hooks.done.tap("MyPlugin", (compilation) => { //done 这个Hook是指这个插件注册完成后触发
+      console.log("compilation done");
+    });
+      compiler.hooks.run.tapAsync("MyPlugin", (compilation, callback) => {//run表示插件正在运行时候
+      setTimeout(()=>{
+        console.log("compilation run");
+        callback() //callback 表示异步事件的返回值
+      }, 1000)
+    });
+    compiler.hooks.emit.tapPromise("MyPlugin", (compilation) => { //emit表示输出 asset 到 output 目录之前执行
+      return new Promise((resolve, reject) => {
+        setTimeout(()=>{
+          console.log("compilation emit");
+          resolve();
+        }, 1000)
+      });
+    });
+
+
+  }
+}
+
+```
+
+`compiler`对象包含了 Webpack 环境所有的的配置信息。这个对象在启动 webpack 时被一次性建立，并配置好所有可操作的设置，包括 options，loader 和 plugin。当在 webpack 环境中应用一个插件时，插件将收到此 compiler 对象的引用。可以使用它来访问 webpack 的主环境。
+
+`compilation`对象包含了当前的模块资源、编译生成资源、变化的文件等。当运行webpack 开发环境中间件时，**每当检测到一个文件变化，就会创建一个新的 compilation**，从而生成一组新的编译资源。compilation 对象也提供了很多关键时机的回调，以供插件做自定义处理时选择使用。
+
+**总结**
+
+compiler 可以获取webpack整个的生命周期 以及webpack的plugin/loader的资源
+
+compilation 是单个文件处理的时候可以获取单个文件的开始和最后输出的状态 和单个文件有关
+
+https://webpack.docschina.org/api/compiler-hooks/#emit 所有的钩子
+
+我们就来尝试一个简单的示例插件，在打包目录生成一个`filelist.md`文件，文件的内容是将所有构建生成文件展示在一个列表中：
+
+```js
+class FileListPlugin {
+    apply(compiler){
+        compiler.hooks.emit.tapAsync('FileListPlugin', (compilation, callback)=>{
+            var filelist = 'In this build:\n\n';
+            // 遍历所有编译过的资源文件，
+            // 对于每个文件名称，都添加一行内容。
+            for (var filename in compilation.assets) {
+                filelist += '- ' + filename + '\n';
+            }
+            // 将这个列表作为一个新的文件资源，插入到 webpack 构建中：
+            compilation.assets['filelist.md'] = {
+                source: function() {
+                    return filelist;
+                },
+                size: function() {
+                    return filelist.length;
+                }
+            };
+            callback();
+        })
+    }
+}
+module.exports = FileListPlugin
+
+
+```
+

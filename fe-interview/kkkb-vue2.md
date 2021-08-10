@@ -186,5 +186,5 @@ next-tick函数放到队列最后面 首选的是promise这种异步方式
 
 #### 13.响应式理解
 
-**data:{obj：{a:1,b:2}} 几个对象几个ob 几个key几个dep因为会遍历obj的key进行响应式处理* 几个组件几个watcher** 数据改变dep去让相关的watcher队列改变
+**data:{obj：{a:1,b:2}} 几个对象几个observer 几个key几个dep因为会遍历obj的key进行响应式处理* 几个组件几个watcher** 数据改变dep去让相关的watcher队列改变
 
