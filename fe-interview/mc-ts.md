@@ -280,8 +280,18 @@ obj4可以调用study obj不可以
 
 只要准售类型转换和断言的规则的也就能实现这种写法，这时候parent就是people类型了而不是Ameicanpeople类型 但是实例还是AmericanPeople实例
 
+举例
+
 ```ts
 let parent:People = new AmericanPeople()  //可以自定义类型时候写父类 因为parent和AmericanPeople可以转换
+```
+
+```ts
+let mys = {
+  username:'bang'
+}
+type objType = {username:string,age:1}
+let t1 = mys as objtype  //!可以相互断言 因为public的属性是子集！
 ```
 
 
@@ -495,12 +505,16 @@ let [x,y]:readonly [number,...any] = [1,'adasd',23423] as const //rest表示可�
 type funType = (n:number,str:string)=>any
 
 
-interface funInterface {
+interface funInterface<T> {
   (n:number,str:string):any
 }
 let myTest:funInterface = (n:number,str:string){
   
 }
+type funType2 = <T>(n:T,str:string)=>any //泛型函数类型
+interface funInterface2<T> {
+  (n:number,str:string):any
+}////泛型函数类型第二种写法
 ```
 
 两种定义函数类型的方法 注意第二种 一般Interface是一个对象比如
@@ -535,9 +549,14 @@ interface funInterface {
 参数默认取值可以重载  参数类型必须一样 只是可以取不同的参数值当作类型 然后函数执行的时候可以根据判断(但是感觉没啥用)
 
 ```ts
-interface funInterface {
+interface funInterface {  //interface改成type也行
   (n:1,str:string):any,
   (n:2,str:string):any,
+  
+}
+ type funInterface ={
+  (str:string,n:1):any,
+  (str:string,n:2):any,
   
 }
 
@@ -555,3 +574,400 @@ let t:funInterface = function(n:number,str:string){
 
 
 
+### 18.构造函数类型
+
+没有具体的函数名 但是有new 这个new不是创建对象 而是表示后面的函数类型是个构造函数类型
+
+```ts
+let constructor:new (n:number)=>any
+```
+
+这是普通函数类型 我们还可以用接口函数的定义类型来定义构造函数类型 就是加个new而已
+
+```ts
+type constructorType2={   //或者Interface
+  new(n:number):any
+}
+```
+
+类的名字就是该类的构造函数的对象
+
+```ts
+class Bank{
+  constructor(public n:number){
+    console.log('1',1);
+  }
+}
+
+type constructorType=new (...arg:any)=>any
+
+let constr1:constructorType = Bank //constr1=Bank都是这个类的构造函数 类型是一个构造函数类型constructorType
+
+
+type constructorType=new (s:string)=>any
+
+let constr1:constructorType = Bank //报错 string类型构造函数不能给number类型的构造函数 
+```
+
+作为函数参数也有这两种写法 归根接底就是因为函数类型有两种写法
+
+```ts
+class Bank{
+  constructor(public n:number){
+    console.log('1',1);
+  }
+}
+
+type constructorType=new (n:number)=>any
+type constructorType2={
+  new(n:number):any
+}
+
+let constr1:constructorType2 = Bank
+new constr1(2)
+
+
+
+let createFactory = (constructor:new (n:number)=>any){
+  console.log(constructor.name)//表示钩爪函数的名字 所有构造函数都有这个属性
+
+  new constructor(1)
+
+}
+
+
+let createFactory2 = (constructor:{new (n:number):any}){
+    new constructor(1)
+
+}
+
+createFactory(Bank)
+createFactory2(Bank)
+```
+
+为了拿到返回值的对象变量可以点出n而不是any类型 改造成泛型工厂函数 因为可能是别的类做T而不是单单的Bank
+
+我们定义的构造函数类型也可以加上泛型 然后具体定义对应类的构造函数
+
+```ts
+class Bank{
+  static str:string='22'
+  constructor(public n:number){
+    console.log('1',1);
+  }
+}
+
+type constructorType<T>=new (n:number)=>T
+type constructorType2<T>={
+  new(n:number):T
+}
+
+let constr1:constructorType2<Bank> = Bank
+new constr1(2)
+
+
+function createFactory<T>(constructor:new (n:number)=>T){
+  console.log(constructor.name)//表示钩爪函数的名字 所有构造函数都有这个属性
+  return new constructor(1)
+}
+
+
+function createFactory2<T>(constructor:{new (n:number):T}){
+  return new constructor(1)
+  
+}
+
+createFactory<Bank>(Bank).n
+createFactory2(Bank)
+```
+
+### 19.交叉 联合类型
+
+**交叉类型**就是两个类型所有的属性的类型  **必须包含所有的属性 ** 相当于加起来  相当于类型1并且类型2则全部都要
+
+```ts
+type obj1 = {username:string,age:number}
+type obj2 = {phone:string,age:number}
+type obj3 = obj1 & obj2  //!obj3应该是 {username:string,age:number，phone:string}
+let jiaocha:obj1&obj2 = { 
+  username:'1',
+  age:2,
+  phone:'4'
+}//!必须有三个 少一个都不是
+```
+
+**联合类型** 满足联合的其中一个就行或者其中的一个类型加上另外的一个类型种的部分属性  相当于类型1或者类型2则其中一个
+
+```ts
+type obj1 = {username:string,age:number}
+type obj2 = {phone:string,age:number}
+type obj3 = obj1 & obj2  //!obj3应该是 {username:string,age:number，phone:string}
+let jiaocha:obj1&obj2 = { 
+  username:'1',
+  age:2,
+  phone:'4'
+}//!必须有三个 少一个都不是
+jiaocha.age
+jiaocha.username
+jiaocha.phone //交叉类型全部能点出三个属性
+let union:obj1|obj2={
+  username:"1",
+  age:2
+}
+
+let union3:obj1|obj2={
+  username:"1",
+  age:2,
+  phone:'213'
+}//这样也可以 
+union.age //联合类型只能点出两个类型共有的属性
+```
+
+联合类型重载
+
+```ts
+
+type Button= {
+  size:number,
+  link:string
+}
+type Link={
+  href:string,
+  title:string
+}
+type Href = {
+  location:string,
+  type:string
+}
+
+function cross<T extends object,U extends object>(obj1:T,obj2:U):T&U
+function cross<T extends object,U extends object,X extends object>(obj1:T,obj2:U,obj3:X):T&U&X
+function cross<T extends object,U extends object,X extends object>(obj1:T,obj2:U,obj3?:X){
+  let obj = {} as object
+  let combine=obj as T & U
+  
+  Object.keys(obj1).forEach(key=>{
+    combine[key] = obj1[key]
+  })
+  Object.keys(obj2).forEach(key=>{
+    combine[key] = obj2[key]
+  })
+  if(obj3){
+    let combine2 = combine as T & U & X
+    Object.keys(obj3).forEach((key:string)=>{
+      combine2[key] = obj3[key]
+    })
+    return combine2
+  }
+  return combine
+}
+
+
+```
+
+
+
+
+
+### 20.infer
+
+infer是出现在extends的条件语句种以占位符出现的用来修饰某一**数据类型**的关键字，没修饰的数据类型等到使用时候才能被推断出来
+
+#### 1.infer出现的位置
+
+​	1.出现在extends条件语句后的**函数类型**的参数类型上    extends后面一定是函数类型  目的:拿到函数参数类型
+
+```ts
+type inferResult<T> = T extends (param:infer P)=>any?P:number
+
+type functionType = (str:string)=>any
+
+type result = inferResult<functionType>
+```
+
+​	**P一定是？后第一个 不能和number换位置**	
+
+​	2.出现在extends条件语句后的**函数类型**的返回值类型上	extends后面一定是个函数类型  目的：拿到函数的返回类型
+
+```ts
+type inferResult<T> = T extends (param:string)=> infer P?P:string
+
+type functionType = (str:string)=>number
+
+type result = inferResult<functionType>
+```
+
+**P一定是？后第一个 不能和string换位置**	
+
+可以有多个infer但是W和P必须在问号后第一个位置
+
+```ts
+
+type inferResult<T> = T extends (param:string,m:infer W)=> infer P?P&W:string
+
+type functionType = (str:string,m:number)=>number
+
+type result = inferResult<functionType>
+```
+
+3.出现在类型的泛型具体化类型上
+
+```ts
+
+ type A<T> = T extends Set<infer E>?E:number
+let test = "asada"
+ type res = A<Set<typeof test> >
+```
+
+和函数差不多 只是这时候获取的Set接口的传入的泛型的类型
+
+#### 2.infer和泛型的区别 
+
+1.泛型可出现在类/接口上 但是Infer只能出现在extends关键字后
+
+2.infer后的数据类型不用提前定义就能使用 他保护后面的类型使得调用的时候才知道这个类型是啥 **infer就是占位符型的关键字**
+
+#### 3.真实应用场景
+
+##### unref源码
+
+![image-20211201100800159](https://i.loli.net/2021/12/01/F4jZELYvl1iWdDm.png)
+
+```TS
+T extends Ref<infer V>?V:T
+```
+
+并不是约束T只能传Ref的实例 而是表示返回值类型要看T是不是Ref实例来返回不同的类型 调用unref时候的T可以传任何类型
+
+### 21.extract -提炼
+
+```ts
+type Extract<T,U> = T extends U?T:never
+```
+
+
+
+#### 1.父子类
+
+T extends U 不仅仅是继承 T的属性是U的属性的子集即可 不能U的属性是T的属性的子集 这里是类型转换的要求不一样	
+
+```ts
+type a = Extract<ChinesePeople,People>  //ChinesePeople
+type a = Extract<People,ChinesePeople>  //never  除非people和chinesePeople属性一样 那么证明chinesePeople没新增子集的属性 才会返回People
+```
+
+#### 2.联合类型
+
+```ts
+type test = Extract<string,string | number > //返回string类型
+```
+
+因为是子集
+
+```ts
+type tes2t = Extract<string|number,string > //也是string类型
+```
+
+会先拿string和string判断发现是true 那么返回string 在拿number去比较 false 最后两个结果string|never联合起来就是string
+
+```ts
+type tes2t = Extract<string|number,string|number|symbol  > //string|number
+type tes2t = Extract<string|number|symbol,string|number  > //string|number
+```
+
+会拿string去和string|number比较 在拿number和string|number比较再拿symbol和string|number比较 最后string|number|never即string|number
+
+**规则就是** 会先拿string和string判断发现是true 那么返回string 在拿number去比较 false 最后两个结果string|never联合起来就是string
+
+#### 3.函数
+
+```ts
+
+type fun1 = (one:number)=>string
+type fun2 = (one:number,two:string)=>string
+
+type test2323 = Extract<fun1,fun2>   //fun1
+type test23232 = Extract<fun2,fun1>   //never
+```
+
+fun1参数是fun2参数的子集就符合extends
+
+```ts
+type fun1 = (one:number)=>string
+type fun2 = (one:number)=>string|number
+
+type test2323 = Extract<fun1,fun2>   //fun1
+type test23232 = Extract<fun2,fun1>   //never
+```
+
+fun1的返回值是fun2的返回值的子集就符合extends
+
+```ts
+type fun1 = (one:number)=>string
+type fun2 = (one:number,two:string)=>string|number
+
+type test2323 = Extract<fun1,fun2>   //fun1
+type test23232 = Extract<fun2,fun1>   //never
+```
+
+同时是子集也可以
+
+#### 4.使用场景
+
+可以简化泛型约束
+
+```ts
+function cross<T extends object ,U extends object>(obj1:T,obj2:U){
+
+}
+cross('sss','vvv') //不是object类型报错
+```
+
+写在T extends object 很麻烦
+
+```ts
+function cross<T  ,U >(obj1:Extract<T,object>,obj2:Extract<U,object>){
+
+}
+cross('sss','vvv') //不是object类型报错
+```
+
+把约束写在参数类型上 这样如果不是Object类型就是Never就会报错
+
+```ts
+//最终版 把Extract单独提取出来省的写那么多
+type crossType<T> = Extract<T,object>
+function cross<T  ,U >(obj1:crossType<T>,obj2:crossType<U>){
+
+}
+cross('sss','vvv') //不是object类型报错
+```
+
+### 21.exclude-排除
+
+```ts
+type Extract<T,U> = T extends U?never:T
+```
+
+刚好和Extract相反
+
+```ts
+type test1 = Exclude<'aa'|'bb'|'cc'|'dd','aa'|'bb'|'cc'>  //‘dd'
+
+```
+
+规则和Extract一样 'aa'去和'aa'|'bb'|'cc' 比较符合则是never 最后'dd'不符合'aa'|'bb'|'cc' 返回’dd' 最后‘dd’|never就是‘dd'
+
+```ts
+type test2 = Exclude<'aa'|'bb'|'cc'|'dd','aa'> //'bb'|'cc'|'dd
+```
+
+这样写就是**排除**的效果 比如 aa 去和aa比较返回never bb去和aa比较是宝宝 最后就是'bb'|'cc'|'dd
+
+**可以实现T中有而U中没有的属性**
+
+```ts
+type test2 = Exclude<keyof Worker,keyof Student> //返回这两个类worker比student多的属性
+```
+
+### 21.record
