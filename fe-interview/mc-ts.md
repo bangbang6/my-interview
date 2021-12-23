@@ -1,4 +1,6 @@
-## 1.原型对象
+
+
+### 1.原型对象
 
 修改原型对象？ 其实没修改 哈哈哈
 
@@ -12,7 +14,7 @@
 
 ![image-20211011154311708](https://i.loli.net/2021/10/11/ZUBSFVQ18Ram6lE.png)
 
-## 2.ts的环境搭建
+### 2.ts的环境搭建
 
 #### 1.tsc --init 初始化tsconfig.json文件 配置都有英文说明
 
@@ -170,7 +172,7 @@ let z:unknown =3
 let k:number =z //也会报错 unkonw不是Number类型
 ```
 
-#### 7.继承
+### 7.继承
 
 **总结:子类会继承父类public的属性和方法 可以重写 如果没重写就用父类的**
 
@@ -214,7 +216,7 @@ let c1 = new Car('大奔','666',2,1000,1)
 console.log('c1.calcRent()',c1.calcRent());
 ```
 
-#### 8.类型断言  是对对象as一下
+### 8.类型断言  是对对象as一下
 
 ##### 1.子类和父类可以互相转换 不存在子类比父类小的关系 没有父类包含子类的关系 而是可以互相转换的同等关系
 
@@ -241,7 +243,7 @@ let o4 = o3 as Parent //断言成父类也可以
 
 obj4是有study obj3没有study
 
-#### 9.类型转换 尖括号 是对对象尖括号一下
+### 9.类型转换 尖括号 是对对象尖括号一下
 
 ```ts
 class Parent {
@@ -264,7 +266,7 @@ let obj4 = <Son>obj3
 
 obj4可以调用study obj不可以
 
-#### 10.类型转换和类型断言遵守一下规则
+### 10.类型转换和类型断言遵守一下规则
 
 **1.除了继承关系 普通类关系也可以互相断言，只要满足下面条件**
 
@@ -296,7 +298,7 @@ let t1 = mys as objtype  //!可以相互断言 因为public的属性是子集！
 
 
 
-#### 11.类型守卫
+### 11.类型守卫
 
 在语句的块级作用域缩小变量的一种类型推断的行为
 
@@ -332,7 +334,7 @@ let p  = new Parent()
 object.prototype.toString.call(p) //[object object]  出不来parent
 ```
 
-#### 12.多态  适用于重写方法
+### 12.多态  适用于重写方法
 
 ```ts
 class Customer {
@@ -356,9 +358,9 @@ cus.checkWeiGui(c1) //传入car 是Vercel子类
 console.log('b1.calcRent()',b1.calcRent());
 ```
 
-#### 13.抽象类
+### 13.抽象类
 
-抽象类就是不能实例的类得换成抽象类  比如人是没有实例的 因为他不是一个特定的人 只有具体的中国人才可以实例
+#### 抽象类就是不能实例的类得换成抽象类  比如人是没有实例的 因为他不是一个特定的人 只有具体的中国人才可以实例
 
 ```ts
 abstract class People{
@@ -393,7 +395,7 @@ let chi = new chinesePeople('bang',32)
 
 
 
-#### 14.自定义守卫
+### 14.自定义守卫
 
 有两个作用 一个是返回true/false 你什么函数逻辑都可以 只是必须返回true/false 这是限制  第二个就是额外的函数功能 它可以把你参数自定义为一个类型(但必须是你定义参数的类型的子集），方便后续调用直接可以调用对应类型方法
 
@@ -424,7 +426,7 @@ isRef这个函数就是自定义守卫 可以由别的逻辑返回true/false 但
 
 
 
-#### 15.readonly 和const
+### 15.readonly 和const
 
 1.readonly是加在属性 **class/interface/type** )上的 也可以加在参数对象变量的属性上 其他都不行  const是定义变量用的 
 
@@ -485,7 +487,7 @@ function showArr(arr:readonly (string|number) []){ //readonly是在类型上的 
 showArr(arr6) //as const 的类型必须用readonly来接住
 ```
 
-#### 16.可变元组
+### 16.可变元组
 
 ```ts
 let [x,y]:[number,...any] = [1,'adasd',23423] //rest表示可变元组
@@ -970,4 +972,247 @@ type test2 = Exclude<'aa'|'bb'|'cc'|'dd','aa'> //'bb'|'cc'|'dd
 type test2 = Exclude<keyof Worker,keyof Student> //返回这两个类worker比student多的属性
 ```
 
+**这个规则其实就是联合类型结合extends的判断规则 而不是这两个规则**
+
+```ts
+string | number | object extends string | number | symbol
+```
+
+返回值就是 先string去看看是不是extends string | number | symbol  再看 number extends string | number | symbol 再看 object extends string | number | symbol 最后一个是never其他都是自己 所以 string | number
+
 ### 21.record
+
+**keyof any** 就是这三个类型的联合类型string|number|symbol
+
+```ts
+type oneAntType = keyof any //!string|number|symbol
+```
+
+**number和string 到底是值还是类型**
+
+```ts
+type oneType<K> = K extends keyof any ? K:never
+
+type mt = oneType<4>  //返回4 因为4是一种类型且extends number是true
+let n = 2
+//type mt23= oneType<n>  //!报错 因为这是个对象 而不是个类型
+type mt2 = oneType<'abc'>  //返回'abv 因为4是一种类型且extends number是true
+let str:string = 'as'
+//type mt4 = oneType<str>  //!报错 因为这是个对象 而不是个类型
+type mt4 = oneType<typeof str>  //返回string
+```
+
+**P in K**
+
+```ts
+type MyRecord<K> = {
+  [P in 'username'|'age'] :string
+} //其实就是下面这个 in就是有循环的意思 后面是联合类型的话就是key就是这几个类型
+// type MyRecord<K> = {
+//   username: string;
+//   age: string;
+// }
+
+
+type MyRecord<K> = {
+  [P in string] :string
+}
+//key只要是string就行
+let an:MyRecord = {
+  'asdasdas':'sadasd'
+}
+type MyRecord = {
+  [P in number] :string
+}
+//索引是Number类型其实就是数组
+let as:MyRecord = ['sadasd','sadas']
+```
+
+**Record和Object区别**
+
+Record可以增加索引 但是object不行
+
+```ts
+//!这两个写法都会报错 因为都找不到sa这个属性  object上面什么属性都没有 更别说sa属性啦
+let testO = {username:"wangwu"}
+testO['sa'] = 'xzx'
+
+let testO:object = {username:"wangwu"}
+testO['sa'] = 'xzx'
+//!也报错 因为Object 虽然有valueof之类的原始方法 但是没有sa属性
+let testO:Object = {username:"wangwu"}
+testO['sa'] = 'xzx'
+```
+
+只有写Record接口 然后定义索引类型才可以加属性
+
+**Record和Map区别**
+
+map更重一点 因为要new 但是map也可以定义索引类型
+
+```ts
+let myMap = new Map<string,string>()  //!第一个是key的类型 第二个是value类型
+myMap.set('nang','vabnf')
+myMap.set(1,'vabnf') //报错因为key只能是string类型
+```
+
+**record和interface的区别**
+
+interface 没有 p in k的语法 就是没有迭代循环的语法 只有可以把key通过冒号指定为一个类型的语法
+
+```ts
+interface MyRecord2  {
+  [P in 'username' | 'age'] :string  //报错
+}
+
+//只能是string,number
+interface MyRecord2  {
+  [P :string] :string  //报错
+}
+interface MyRecord2  {
+  [P :string | number] :string  //报错
+}
+let a2:MyRecord2 = {
+  'asd':"asd",
+  12:'asdas'
+}
+```
+
+record可以完成interface的作用 也能有 p in k 的语法
+
+```
+type MyRecord = {
+  [P in 'username' | 'age'] :string
+}
+let a2:MyRecord = {
+  'username':"asd",
+  "age":'sad'
+}
+type MyRecord2 = {
+  [P in 'us:string | number] :string
+}
+let a3:MyRecord2 = {
+  ' 'asd':"asd",
+  12:'asdas'
+}
+```
+
+
+
+### 22.pick快速抓取属性
+
+
+
+把某个接口的你想要的属性单独提取出来
+
+```TS
+interface Book {
+  ISBN:string,
+  name:string,
+  price:string,
+  count:number
+}
+
+type Pick2<T,K extends keyof T>={
+  [P in K]:T[P]
+}
+
+// Type pickType = {
+//   ISBN: string;
+//   count: number;
+// }
+type pickType = Pick2<Book,"ISBN"|"count">  
+```
+
+### 23.required
+
+把接口的可选属性变成必选属性
+
+```ts
+type Required<T> = {
+    [P in keyof T]-?: T[P];
+};
+```
+
+```ts
+interface  todo{
+  name:string,
+  time?:string,
+  other?:number
+}
+
+// type myTest2 = {
+//   name: string;
+//   time: string;
+//   other: number;
+// } 都变成了必选
+type myTest2 = Required<todo>
+```
+
+### 24.partical
+
+//变成全可选属性
+
+```ts
+type Partial<T> = {
+    [P in keyof T]?: T[P];
+};
+//变成全可选属性
+type myTest21 = {
+    name?: string | undefined;
+    time?: string | undefined;
+    other?: number | undefined;
+}
+```
+
+### 25.readonly
+
+变成全只读属性
+
+```ts
+// type myTest21 = {
+//   readonly name: string;
+//   readonly time?: string | undefined;
+//   readonly other?: number | undefined;
+// }
+type myTest21 = Readonly<todo>
+
+```
+
+### 26.omit
+
+反向抓取数据
+
+```ts
+ */
+type Omit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
+```
+
+```ts
+interface Book {
+  ISBN:string,
+  name:string,
+  price:string,
+  count:number
+}
+// type typeOmit = {
+//   name: string;
+//   price: string;
+//   count: number;
+// }
+type typeOmit = Omit<Book,'ISBN'>
+```
+
+Exclude 就是排除T中有K的属性 Pick就是把这些属性读取出来 所有就是Pick的反向的作用
+
+### 27.ts报错原则
+
+ts在写代码的时候报错一定是类型检查错误 而不是具体内容不兼容错误
+
+![image-20211217093222427](https://s2.loli.net/2021/12/17/PruQx6SvY8niWVU.png)
+
+
+
+比如这里类互相赋值报错 就算你知道targetClass的内容是loggerSonclass的子类可以互相赋值 但是在编译期间ts是不知道的 
+
+ts知道的只是类型 你在把一个new (name)=>LoggerSonClass 赋值给一个any类型的对象 肯定报错 我们得把any改成new (...args:any)=>any这通用钩爪函数类型才能类型互相兼容赋值
