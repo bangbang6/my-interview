@@ -172,6 +172,25 @@ let z:unknown =3
 let k:number =z //也会报错 unkonw不是Number类型
 ```
 
+```ts
+let value: unknown;
+//unkown是所有类型的父集 所以可以赋值任何类型 
+value = true;             // OK
+value = 1;                // OK
+value = "Hello World";    // OK
+value = Symbol("type");   // OK
+value = {}                // OK
+value = []                // OK
+let value: unknown;
+//unkonwn不是任何的子集 所以他上面没有这些属性 
+value.foo.bar;  // ERROR
+value();        // ERROR
+new value();    // ERROR
+value[0][1];    // ERROR
+```
+
+我们看到,这就是 `unknown` 与 `any` 的不同之处,虽然它们都可以是任何类型,但是当 `unknown` 类型被确定是某个类型之前,它不能被进行任何操作比如实例化、getter、函数执行等等。 	起到一个保护作用
+
 ### 7.继承
 
 **总结:子类会继承父类public的属性和方法 可以重写 如果没重写就用父类的**
@@ -1216,3 +1235,29 @@ ts在写代码的时候报错一定是类型检查错误 而不是具体内容�
 比如这里类互相赋值报错 就算你知道targetClass的内容是loggerSonclass的子类可以互相赋值 但是在编译期间ts是不知道的 
 
 ts知道的只是类型 你在把一个new (name)=>LoggerSonClass 赋值给一个any类型的对象 肯定报错 我们得把any改成new (...args:any)=>any这通用钩爪函数类型才能类型互相兼容赋值
+
+## 28.函数接口类型重载
+
+```ts
+//!第一种定义函数的类型 这里是重载函数的类型
+declare interface funcOverload {
+  (name:number,age:number):void;
+  (name:string,age:number):void
+
+}
+//!第二种定义函数的类型 普通的函数类型
+type fybc = (name:string,age:number)=>void
+//!函数内容 因为是重载函数所以所有的重载前面都得写上
+function funcOverload(name:number,age:number):void
+function funcOverload(name:string,age:number):void
+function funcOverload(name:string | number,age:number){
+  if(typeof name === 'string'){
+    console.log('string');
+  }
+}
+
+funcOverload('bang',18)
+```
+
+接口形式的函数类型**重载**一般是在d.ts中起到一个描述类型的作用 具体的定义和实现必须要写多个函数
+

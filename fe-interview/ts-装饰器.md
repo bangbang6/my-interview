@@ -224,3 +224,214 @@ class UserController{
 }
 ```
 
+
+
+## 7.nest中复杂的泛型语法
+
+### 1.get
+
+![image-20211223174517358](https://s2.loli.net/2021/12/23/IMkPLvXS1htZ6YR.png)
+
+get函数是IRouterMatcher的类型 主要有很多泛型在<>里面 然后括号里面是参数 第一个参数是path,后面就是执行的函数类型是RequestHandler这个函数类型同样接受几个泛型
+
+```ts
+export interface IRouterMatcher<
+    T,
+    Method extends 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head' = any
+> {
+    <
+        Route extends string,
+        P = RouteParameters<Route>,
+        ResBody = any,
+        ReqBody = any,
+        ReqQuery = ParsedQs,
+        Locals extends Record<string, any> = Record<string, any>
+    >(
+        // tslint:disable-next-line no-unnecessary-generics (it's used as the default type parameter for P)
+        path: Route,
+        // tslint:disable-next-line no-unnecessary-generics (This generic is meant to be passed explicitly.)
+        ...handlers: Array<RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>>
+    ): T;
+    <
+        Path extends string,
+        P = RouteParameters<Path>,
+        ResBody = any,
+        ReqBody = any,
+        ReqQuery = ParsedQs,
+        Locals extends Record<string, any> = Record<string, any>
+    >(
+        // tslint:disable-next-line no-unnecessary-generics (it's used as the default type parameter for P)
+        path: Path,
+        // tslint:disable-next-line no-unnecessary-generics (This generic is meant to be passed explicitly.)
+        ...handlers: Array<RequestHandlerParams<P, ResBody, ReqBody, ReqQuery, Locals>>
+    ): T;
+    <
+        P = ParamsDictionary,
+        ResBody = any,
+        ReqBody = any,
+        ReqQuery = ParsedQs,
+        Locals extends Record<string, any> = Record<string, any>
+    >(
+        path: PathParams,
+        // tslint:disable-next-line no-unnecessary-generics (This generic is meant to be passed explicitly.)
+        ...handlers: Array<RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>>
+    ): T;
+    <
+        P = ParamsDictionary,
+        ResBody = any,
+        ReqBody = any,
+        ReqQuery = ParsedQs,
+        Locals extends Record<string, any> = Record<string, any>
+    >(
+        path: PathParams,
+        // tslint:disable-next-line no-unnecessary-generics (This generic is meant to be passed explicitly.)
+        ...handlers: Array<RequestHandlerParams<P, ResBody, ReqBody, ReqQuery, Locals>>
+    ): T;
+    (path: PathParams, subApplication: Application): T;
+}
+
+```
+
+
+
+### 2.接口的函数类型重载
+
+上面IRouterMatcher 其实就是接口的函数类型 因为里面的函数都没名字 但是里面有很多函数重载 都是用这个接口的名字
+
+### 3.少参数的函数可以传给多参数的函数类型
+
+```ts
+export interface RequestHandler<
+    P = ParamsDictionary,
+    ResBody = any,
+    ReqBody = any,
+    ReqQuery = ParsedQs,
+    Locals extends Record<string, any> = Record<string, any>
+> {
+    // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
+    (
+        req: Request<P, ResBody, ReqBody, ReqQuery, Locals>,
+        res: Response<ResBody, Locals>,
+        next: NextFunction,
+    ): void;
+}
+```
+
+这个是RequestHandler的类型 我们发现使用时候中间件(req,res,next)可以使用这个类型 而最终的接口函数比如tsetfunL也能使用(req,res) 为什么呢 next又没打问号 因为少参数的函数可以传给多参数的函数类型
+
+```ts
+import express, { Request, RequestHandler,Response } from 'express'
+const app = express()
+const router = express.Router()
+
+let tsetfunL:RequestHandler=(req:Request,res:Response)=>{
+  console.log('enter');
+  res.end('asss')
+}
+app.use(router)
+router.get('/info',tsetfunL)
+app.listen(8123);
+```
+
+### 4.接口当中的this
+
+```ts
+export interface Response<
+    ResBody = any,
+    Locals extends Record<string, any> = Record<string, any>,
+    StatusCode extends number = number
+> extends http.ServerResponse,
+        Express.Response {
+    status(code: StatusCode): this;
+    send(body:string):this;
+    
+  }
+```
+
+this表示当前接口类型 此处就是Response类型 
+
+![image-20211224092907835](https://s2.loli.net/2021/12/24/cb2vWTYhu8RjaqK.png)
+
+返回this就能级联调用 res.status('xxx').send('xxx')
+
+### 5.自动推导泛型
+
+```ts
+ interface IRouterMatcher2<
+    
+    Method extends 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head' = any
+> {
+    <
+        Route extends string,
+        P = RouteParameters<Route>,
+        ResBody = any,
+        ReqBody = any,
+        
+    >(
+        // tslint:disable-next-line no-unnecessary-generics (it's used as the default type parameter for P)
+        path: Route,
+        // tslint:disable-next-line no-unnecessary-generics (This generic is meant to be passed explicitly.)
+        
+    ): void;
+}
+let get:IRouterMatcher2 = (path)=>{
+
+}
+get('food/:id/:prioce')
+```
+
+当都没传泛型的时候 Route，p,ResBody,ReqBody只能通过推导或者默认值来确定  P,ResBody,ReqBody都有默认值 Route没有 Route是根据Path传进来的类型推导 比如这时候你传'food/:id/:prioce'那么Route就是推导为'food/:id/:prioce' 而不是string 那么'food/:id/:prioce'这个又被传入RouteParameters<Route>，RouteParameters就能解析'food/:id/:prioce'拿到这两个动态参数
+
+如果
+
+```ts
+get<string>('food/:id/:prioce')
+```
+
+那么Route就不会推导，而是直接为string，那么RouteParameters<Route>中就没有具体的路径从而解析不出来动态参数
+
+### 6.去尾 巧用infer
+
+```ts
+type RemoveTail<S extends string, Tail extends string> = S extends `${infer P}${Tail}` ? P : S;
+
+
+type RemoveTest = RemoveTail<'abc/:id/:name',':name'> //RemoveTest='abc/:id/
+
+//p就是除了尾部的name的前面的字符串 因为具体的	·字符串也能是类型 tail就是你传进去想去尾的部分
+
+```
+
+```ts
+type GetRouteParameter<S extends string> = RemoveTail<
+    RemoveTail<RemoveTail<S, `/${string}`>, `-${string}`>,
+    `.${string}`
+>;
+
+
+//`-${string}` 表示’-‘后面的所有字符串 不是指定的字符串
+//`/${string}` 表示’/‘后面的所有字符串
+```
+
+这个类似**函数**了 就是当type有泛型的时候就很像一个函数执行一段逻辑然后返回一个新的类型
+
+### 7.递归解析params
+
+```ts
+export type RouteParameters<Route extends string> = string extends Route
+    ? ParamsDictionary
+    : Route extends `${string}(${string}`
+        ? ParamsDictionary //TODO: handling for regex parameters
+        : Route extends `${string}:${infer Rest}`
+            ? (
+            GetRouteParameter<Rest> extends never
+                ? ParamsDictionary
+                : GetRouteParameter<Rest> extends `${infer ParamName}?`
+                    ? { [P in ParamName]?: string }
+                    : { [P in GetRouteParameter<Rest>]: string }
+            ) &
+            (Rest extends `${GetRouteParameter<Rest>}${infer Next}`
+                ? RouteParameters<Next> : unknown)
+            : {};
+```
+
